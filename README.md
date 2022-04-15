@@ -20,24 +20,24 @@
 ## 内核介绍
 - 适用ROM：基于MIUI的Android 11和Android 12系统
 - 适用机型：小米10、小米10 Pro、小米10 Ultra、红米K30 Pro、红米K30s Ultra
-- 内核版本：4.19.221（CrystalFrostwork Build 245)
+- 内核版本：4.19.237（CrystalFrostwork Build 369 Release)
 - 开发者：阿菌•未霜
 
 ## 内核特性
-- CPU调度器：performance、powersave_util、schedutil（默认）
+- CPU调度器：powersave、performance、schedutil（默认）
 - I/O调度器：cfq（默认）
-- TCP拥塞算法：reno、westwood（默认）
+- TCP拥塞算法：reno、lia、olia（默认）
+- 支持MPTCP（MultiPathTCP）
 - 内核支持ExFAT、NTFS3、EROFS文件系统。
 - 支持自定义充电电流，USB Type-C口最大输入电流不限制，具体方法请见下文高级用法。
 - 支持电压查看，可修改文件选择支持EX Kernel Manager或Kernel Adiutor的接口，具体方法请见下文高级用法。
 - 解锁电池最大输入电流限制。
-- 略微的提高了恒压充电的充电电压，稍微提高了充至满电的速度。
 - 支持唤醒锁管理。
 - 支持Fsync控制，默认开启，可通过内核管理软件关闭。
 - 移植来自Linux 5.2内核上的lzo-rle压缩算法。
 - 移植来自Linux 5.16内核上的ZSTD 1.4.5压缩算法。
-- 支持lzo、lzo-rle、lz4、zstd作为ZRAM压缩算法，其中zstd为默认，提高RAM压缩率。
-- 支持ZRAM自动回写（需开启系统内存扩展功能，或手动设置回写设备）。
+- 支持lzo、lzo-rle、lz4作为ZRAM压缩算法，其中lzo-rle为默认，提高ZRAM速度。
+- 支持ZRAM回写（需开启系统内存扩展功能，或手动设置回写设备）。
 - 支持屏幕最低亮度控制。
 - 自带内核级别温控，替换小米官方极为不合理的温控。
 - 电池充电降速温度阈值提高至 55℃。
@@ -50,6 +50,7 @@
 - 加入为MIUI特别优化的WALT调度器。
 - 加入虚假的SELinux严格模式，禁用SELinux的同时不会被第三方软件检测出SELinux处于宽容模式。
 - 支持大容量电池（破解锁容）
+- 支持未通过验证的电池启用快充（尽管系统可能会弹出提示）
 
 &emsp;&emsp;*更多特性，请下载体验*
 
@@ -129,6 +130,9 @@
 - unverifed_current_ma：当充电器未通过小米认证时，Type-C口最大允许输入的电流。
 - vbus_voltage_mv：Type-C最大允许电压（单位mV)。
 
+#### battery文件夹
+- bypass_verify：禁用电池验证，强制认为电池为官方认证电池。
+
 ### 文件管理
 1. 打开X-plore文件管理器。
 2. 找到位置`/sys/crystalfrostwork/file_manager`
@@ -164,8 +168,39 @@
 ## 下载链接
 | 版本号 | 文件名 | 文件大小 | 校验和（MD5） | 链接 |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
+| 369 | CrystalFrostwork-Build-369-For-SM8250-Releases.zip | 22,793,455 字节 | DC794317F6A4FB4D5C2D844F24F4058D | [下载](https://gitea.com/Mandi-Sa/CrystalFrostwork-Archive/raw/branch/kernels/CrystalFrostwork-Build-369-For-SM8250-Releases.zip "下载") |
 | 245 | CrystalFrostwork-Build-245-For-SM8250.zip | 22,760,675 字节 | 4EA0CC3222AAD9BC0302FFF2CA2AE258 | [下载](https://gitea.com/Mandi-Sa/CrystalFrostwork-Archive/raw/branch/kernels/CrystalFrostwork-Build-245-For-SM8250.zip "下载") |
 
 ## 更新日志
+### Build 369
+1. Linux 分支更新至4.19.237
+2. 内核基线更新至LA.UM.9.12.r1-14000-SMxx50.0
+3. 修复WDC闪存设备存在的息屏睡死问题
+4. 同步小米12X上的相机修改，支持最新的MIUI13系统（请卸载用于Build 245的相机修复模块）
+5. 同步上游F2FS的优化更改以及补丁
+6. 修复MIUI Android12系统下，游戏切后台之后被锁帧的BUG
+7. 修复系统耗电排行中出现的android.system.suspend@1.0-service进程统计BUG
+8. 修复CPU多线程性能异常降低的BUG
+9. 修复小米10 Ultra使用官方充电器会导致充电断充的BUG
+10. 修复有概率出现应用无响应的BUG
+11. 修复随机数发生器的BUG导致VMOS无法使用的BUG
+12. 修复可能出现的系统界面随机卡死的BUG
+13. 修复WLAN驱动中存在的一些问题
+14. 支持红米系列手动电池解容（小米系列电池容量由主板电量计控制，无锁容，多次充放电即可达到自动解容目的）
+15. 加入基于DAEMON的内存回收功能
+16. 加入MPTCP（MultiPathTCP）支持
+17. 加入ZRAM DEDUP（重复数据删除）功能，降低内存使用
+18. 优化ZRAM重复数据删除HASH列表计算速度，降低HASH重复率
+19. 从小米12X的内核源码中导入最新的充电控制功能
+20. 从小米12X的内核源码中导入小米对于网络协议的修改
+21. 移植最新的震动驱动程序，优化震动效果（仅小米10系列）
+22. 加入UFS时钟门动态控制，提高系统流畅度
+23. ZRAM压缩、解压\kswapd多线程异步化处理
+24. 更新触屏驱动程序固件
+25. 优化电量显示，去除小米的虚假电量，使电量显示更精准（如官方内核上100%-99%能用非常久，但10%以下掉电非常快的问题）
+26. 优化GPU工作进程，提高渲染效率
+27. 加入更快的原生CRC32数据校验
+28. 更新WireGuard驱动
+
 ### Build 245
 1. 初版发布。
