@@ -130,6 +130,8 @@
 #### pd文件夹
 - force_pd_verifed：强制认为所有的PD充电器为已认证状态（破解小米私有充电协议）。
 - ignore_current_negotiate：忽略PD充电器报告的最大允许电流上限，强制使用定义的电流。
+- ignore_incorrect_state：忽略某些比较旧的PD充电器在协议上存在的问题，导致协议协商失败。（可能能解决某些PD充电器无法正常充电或充电缓慢的问题）
+- ignore_usbpd_hard_reset：忽略充电器发来的硬重置信号。（可能能解决某些情况下断冲的问题）
 - pd_current_ma：PD充电协议下，Type-C口最大允许输入的电流。
 - pd_voltage_level：PD充电协议下，最大允许使用的电压档位
 	- 1：5V
@@ -175,15 +177,23 @@
 
 **警告：电压仅允许查看，请不要尝试写入，否则可能会造成不可预料的后果！（如系统崩溃）**
 
-### 强制启用Android 12上的SDcardfs（需Build 378及以上版本的内核）
+### 禁用强制挂载SDcardfs并恢复/sdcard/Adnroid下访问隔离（需Build 387及以上版本的内核）
+- 由于某些APP由于设计问题，内核默认挂载SDcardfs、取消/sdcard/Adnroid访问授权之后，可能会导致某些奇奇怪怪的问题，可以尝试关闭此功能。
 1. 打开文件管理器
 2. 找到位置`/data/crystalfrostwork`
-3. 设置文件`enable_sdcardfs_mount`中的值，其中：
- - 0：不启用该功能，使用系统默认的sdcard挂载方式。
- - 1：启用强制挂载sdcardfs至内置sdcard的功能。
-4. 修改之后保存，重启后生效（永久更改，重启不恢复）。
+3. 创建空文件`sdcard_compatible`
+4. 修改之后保存，重启后生效（永久更改，重启不恢复，若要恢复启用SDcardfs，直接删除`sdcard_compatible`即可）。
 
-**警告：若更改为1之后发生系统崩溃、无法进入系统的问题，请在recovery下将`/data/crystalfrostwork/enable_sdcardfs_mount`文件删除或设置为0，重启后将禁用该功能！**
+**警告：若刷入内核之后发生系统崩溃、无法进入系统的问题，也可在recovery创建文件`/data/crystalfrostwork/sdcard_compatible`，即可以系统默认的方式挂载sdcard**
+
+### 增强后台（需Build 412及以上版本的内核）
+- 在MIUI上，除了AOSP的LMKD低内存杀手之外，还有额外的服务（MiuiMemoryService）用于杀后台，导致后台能力下降。
+1. 打开X-plore文件管理器
+2. 找到文件`/sys/crystalfrostwork/enhanced_background/enabled`
+3. 修改文件的值，其中：
+ - 1：禁用增强后台功能，后台管理与MIUI官方一致。
+ - 2：启用增强后台功能，屏蔽`MiuiMemoryService`服务发出的终止进程信号。（内核默认）
+4. 修改之后保存及时生效，重启恢复默认。
 
 ## 下载链接
 | 版本号 | 文件名 | 文件大小 | 校验和（MD5） | 链接 |
