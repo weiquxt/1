@@ -121,7 +121,6 @@
 ### 自定义充电电流
 1. 打开X-plore文件管理器
 2. 找到位置`/sys/crystalfrostwork/charge_control`
-文件夹内有两个文件夹，hvdcp对应高通QC充电协议，pd对应PD/PPS充电协议
 
 #### hvdcp文件夹
 - qc2_current_ma：QC2.0充电协议下，Type-C口最大允许输入的电流。
@@ -145,6 +144,15 @@
 #### battery文件夹
 - bypass_verify：禁用电池验证，强制认为电池为官方认证电池。
 
+#### legacy文件夹
+- cdp_current_ma：CDP（Charging Downstream Port）充电协议下，USB最大输入电流。
+  - *通常手机连接不支持快充协议的充电器时，协商此协议。*
+- dcp_current_ma：DCP（Dedicated Charging Port）充电协议下，USB最大输入电流。
+- sdp_current_ma：SDP（Standard Downstream Port）充电协议下，USB最大输入电流。
+  - *通常手机USB连接电脑时，协商次协议。*
+- input_volt_limit_mv：进行CDP、DCP、SDP充电时，USB接口允许的最低电压。
+  - *为了防止电流过大而触发电源输出过载保护，当检测到USB接口上的电压低于这个值时，将会自动降低输入电流以确保最终的USB接口上的电压不会低于所设置的电压。电压保护阈值设置越低可能达到的充电电流越高，同时触发电源输出过流保护的可能性越大。*
+  - *仅小米10 Ultra支持此功能*
 ### 文件管理
 1. 打开X-plore文件管理器。
 2. 找到位置`/sys/crystalfrostwork/file_manager`
@@ -177,14 +185,16 @@
 
 **警告：电压仅允许查看，请不要尝试写入，否则可能会造成不可预料的后果！（如系统崩溃）**
 
-### 禁用强制挂载SDcardfs并恢复/sdcard/Adnroid下访问隔离（需Build 387及以上版本的内核）
-- 由于某些APP由于设计问题，内核默认挂载SDcardfs、取消/sdcard/Adnroid访问授权之后，可能会导致某些奇奇怪怪的问题，可以尝试关闭此功能。
-1. 打开文件管理器
-2. 找到位置`/data/crystalfrostwork`
-3. 创建空文件`sdcard_compatible`
-4. 修改之后保存，重启后生效（永久更改，重启不恢复，若要恢复启用SDcardfs，直接删除`sdcard_compatible`即可）。
+### ~~禁用强制挂载SDcardfs并恢复/sdcard/Adnroid下访问隔离（需Build 387及以上版本的内核）~~
+- ~~由于某些APP由于设计问题，内核默认挂载SDcardfs、取消/sdcard/Adnroid访问授权之后，可能会导致某些奇奇怪怪的问题，可以尝试关闭此功能。~~
+1. ~~打开文件管理器~~
+2. ~~找到位置`/data/crystalfrostwork`~~
+3. ~~创建空文件`sdcard_compatible`~~
+4. ~~修改之后保存，重启后生效（永久更改，重启不恢复，若要恢复启用SDcardfs，直接删除`sdcard_compatible`即可）。~~
 
-**警告：若刷入内核之后发生系统崩溃、无法进入系统的问题，也可在recovery创建文件`/data/crystalfrostwork/sdcard_compatible`，即可以系统默认的方式挂载sdcard**
+~~**警告：若刷入内核之后发生系统崩溃、无法进入系统的问题，也可在recovery创建文件`/data/crystalfrostwork/sdcard_compatible`，即可以系统默认的方式挂载sdcard**~~
+
+**由于已知的兼容性故障，此功能已废弃！**
 
 ### 增强后台（需Build 412及以上版本的内核）
 - 在MIUI上，除了AOSP的LMKD低内存杀手之外，还有额外的服务（MiuiMemoryService）用于杀后台，导致后台能力下降。
