@@ -18,16 +18,17 @@
 ------------
 
 ## 内核介绍
-- 适用ROM：基于MIUI的Android 11和Android 12系统
+- 适用ROM：基于MIUI的Android 11-13系统
 - 适用机型：小米10、小米10 Pro、小米10 Ultra、红米K30 Pro、红米K30s Ultra
-- 内核版本：4.19.237（CrystalFrostwork Build 369 Release)
+- 内核版本：4.19.269（CrystalFrostwork Build 509 Release)
 - 开发者：阿菌•未霜
 
 ## 内核特性
 - CPU调度器：powersave、performance、schedutil（默认）
 - I/O调度器：cfq（默认）
 - TCP拥塞算法：reno、lia、olia（默认）
-- 支持MPTCP（MultiPathTCP）
+- 移植上游MGLRU v15，降低内存开销，提升回收效率。
+- 移植上游DAMON，优化内存回收。
 - 内核支持ExFAT、NTFS3、EROFS文件系统。
 - 支持自定义充电电流，USB Type-C口最大输入电流不限制，具体方法请见下文高级用法。
 - 支持电压查看，可修改文件选择支持EX Kernel Manager或Kernel Adiutor的接口，具体方法请见下文高级用法。
@@ -35,9 +36,9 @@
 - 支持唤醒锁管理。
 - 支持Fsync控制，默认开启，可通过内核管理软件关闭。
 - 移植来自Linux 5.2内核上的lzo-rle压缩算法。
-- 移植来自Linux 5.16内核上的ZSTD 1.4.5压缩算法。
-- 支持lzo、lzo-rle、lz4作为ZRAM压缩算法，其中lzo-rle为默认，提高ZRAM速度。
-- 支持ZRAM回写（需开启系统内存扩展功能，或手动设置回写设备）。
+- 移植来自Linux 5.15内核上的LRNG（Linux随机数生成器），优化随机数生成速度
+- 同步上游最新ZSTD源码，并作为ZRAM压缩算法，提高IO速度和压缩率。
+- 支持ZRAM自动回写。
 - 支持屏幕最低亮度控制。
 - 自带内核级别温控，替换小米官方极为不合理的温控。
 - 电池充电降速温度阈值提高至 55℃。
@@ -47,10 +48,12 @@
 - 移除小核低于691MHz的频率，提高能效。
 - 满血快充，保证全程充电最大功率。
 - 破解小米私有快充协议限制，支持绝大多数带PPS协议的充电器开启Mi Turbo Charge。
+- 支持某些快充协议设计不严谨的PPS充电器开启PPS快充。
 - 加入为MIUI特别优化的WALT调度器。
 - 加入虚假的SELinux严格模式，禁用SELinux的同时不会被第三方软件检测出SELinux处于宽容模式。
 - 支持大容量电池（破解锁容）
 - 支持未通过验证的电池启用快充（尽管系统可能会弹出提示）
+- 更强的后台驻留能力（需要开启增强后台功能）
 
 &emsp;&emsp;*更多特性，请下载体验*
 
@@ -74,16 +77,15 @@
 
 ## 常见问题
 1. 此内核我只能保证在基于MIUI的Android 11和Android 12的官方系统上能够正常运行，其他的任何ROM（如官改、类原生等）所可能出现的问题，本人不保证能解决和任何的技术支持。
-2. 小米10、小米10 Pro、红米K30 Pro变焦版刷入内核后会出现相机无法使用的问题，请刷入相机修复模块后使用。
-3. 为什么内核刷不进去/刷入错误1？
+2. 为什么内核刷不进去/刷入错误1？
 	看一下有没有写的支持你的机型，或者使用我推荐的Recovery版本。
-4. 能不能做下某某机型/某某处理器的内核？
+3. 能不能做下某某机型/某某处理器的内核？
 	精力有限，暂时没有考虑做其他处理器的内核，不要再问我这个问题了。
-5. 有没有手把手的小白教程？
+4. 有没有手把手的小白教程？
 	不建议小白刷内核。
-6. 能不能教我写内核？
+5. 能不能教我写内核？
 	我没有这个时间，也没有这个义务。酷安话题**#XDA 干货挖掘计划#**里面有，自己多看看。
-7. 为什么会出现充电断冲的问题？
+6. 为什么会出现充电断冲的问题？
 	1. 如果使用的是第三方充电器，则说明你的充电器可能无法达到Mi Turbo Charge的要求，执行下面的命令禁用内核对于小米私有协议的破解：
 
 	`echo 0 >/sys/crystalfrostwork/charge_control/pd/force_pd_verifed`
@@ -93,27 +95,16 @@
 	`echo 1 >/sys/crystalfrostwork/charge_control/pd/force_pd_verifed`
 
 	2. 如果是官方充电器……那可能就是线的问题了吧……
-8. 红米K30 Pro、红米K30s Ultra可直接写入charge_full节点实现手动解容，而小米10、小米10 Pro、小米10 Ultra由于电池容量计算不由内核、系统控制（自带电量计芯片bq27z561）因此不能手动设置容量，必须等电量计芯片长时间使用自动校正容量才能达到解容的目的。
+7. 红米K30 Pro、红米K30s Ultra可直接写入charge_full节点实现手动解容，而小米10、小米10 Pro、小米10 Ultra由于电池容量计算不由内核、系统控制（自带电量计芯片bq27z561）因此不能手动设置容量，必须等电量计芯片长时间使用自动校正容量才能达到解容的目的。
 
 ## 已知问题
 1. 呼吸灯无效或乱闪。
 
 	解决方法：无，官方未更新源码。
-2. 最低亮度下，锁屏界面非常暗。
 
-	解决方法：无，官方未更新源码。
-3. ZRAM大小/压缩算法不能更改/关闭。
+2. ZRAM大小/压缩算法不能更改/关闭。
 
 	解决方法：无，内核设定如此，不允许关闭ZRAM。
-4. 刚开机的时候WiFi可能搜不到信号。
-
-	解决方法：无，kona平台通病，官方可能有修复但是没开源我不知道咋修。
-5. 红米K30s Ultra无法调整刷新率，默认全局144Hz。
-
-	不完美解决方法：[酷安动态置顶评论](https://www.coolapk.com/feed/35116011?shareKey=NTZjOGYzMDZmOWUzNjI1YzVkM2I~ "酷安动态置顶评论")（不保证一定能解决），后续可能会完美解决。
-6. 某些软件无法使用，显示无网络。
-
-	解决方法：将文件`/proc/sys/net/mptcp/enabled`设置为0（重启会恢复），目前内测已完美修复。
 
 ## 高级用法
 *本节内容需要有一定的基础，看不懂的请跳过，不做额外的技术支持*
@@ -122,27 +113,12 @@
 1. 打开X-plore文件管理器
 2. 找到位置`/sys/crystalfrostwork/charge_control`
 
+#### battery文件夹
+- bypass_verify：禁用电池验证，强制认为电池为官方认证电池。
+
 #### hvdcp文件夹
 - qc2_current_ma：QC2.0充电协议下，Type-C口最大允许输入的电流。
 - qc3_current_ma：QC3.0充电协议下，Type-C口最大允许输入的电流。
-
-#### pd文件夹
-- force_pd_verifed：强制认为所有的PD充电器为已认证状态（破解小米私有充电协议）。
-- ignore_current_negotiate：忽略PD充电器报告的最大允许电流上限，强制使用定义的电流。
-- ignore_incorrect_state：忽略某些比较旧的PD充电器在协议上存在的问题，导致协议协商失败。（可能能解决某些PD充电器无法正常充电或充电缓慢的问题）
-- ignore_usbpd_hard_reset：忽略充电器发来的硬重置信号。（可能能解决某些情况下断冲的问题）
-- pd_current_ma：PD充电协议下，Type-C口最大允许输入的电流。
-- pd_voltage_level：PD充电协议下，最大允许使用的电压档位
-	- 1：5V
-	- 2：9V
-	- 3：12V
-	- 4：15V
-	- 5：20V
-- unverifed_current_ma：当充电器未通过小米认证时，Type-C口最大允许输入的电流。
-- vbus_voltage_mv：Type-C最大允许电压（单位mV)。
-
-#### battery文件夹
-- bypass_verify：禁用电池验证，强制认为电池为官方认证电池。
 
 #### legacy文件夹
 - cdp_current_ma：CDP（Charging Downstream Port）充电协议下，USB最大输入电流。
@@ -153,6 +129,25 @@
 - input_volt_limit_mv：进行CDP、DCP、SDP充电时，USB接口允许的最低电压。
   - *为了防止电流过大而触发电源输出过载保护，当检测到USB接口上的电压低于这个值时，将会自动降低输入电流以确保最终的USB接口上的电压不会低于所设置的电压。电压保护阈值设置越低可能达到的充电电流越高，同时触发电源输出过流保护的可能性越大。*
   - *仅小米10 Ultra支持此功能*
+
+#### pd文件夹
+- force_pd_verifed：强制认为所有的PD充电器为已认证状态（破解小米私有充电协议）。
+- ignore_current_negotiate：忽略PD充电器报告的最大允许电流上限，强制使用定义的电流。
+- ignore_incorrect_state：忽略某些比较旧的PD充电器在协议上存在的问题，导致协议协商失败。（可能能解决某些PD充电器无法正常充电或充电缓慢的问题）
+- ignore_usbpd_hard_reset：忽略充电器发来的硬重置信号。（可能能解决某些情况下断冲的问题）
+- overwrite_pps_current：强制使用pps_current_ma中定义的电流覆盖充电器汇报PPS挡位所支持的电流。
+- pd_current_ma：PD充电协议下，Type-C口最大允许输入的电流。
+- pd_voltage_level：PD充电协议下，最大允许使用的电压档位
+	- 1：5V
+	- 2：9V
+	- 3：12V
+	- 4：15V
+	- 5：20V
+- pps_current_ma：PPS充电协议下，Type-C口最大允许输入的电流。
+- unverifed_current_ma：当充电器未通过小米认证时，Type-C口最大允许输入的电流。
+- vbus_voltage_mv：Type-C最大允许电压（单位mV)。
+
+
 ### 文件管理
 1. 打开X-plore文件管理器。
 2. 找到位置`/sys/crystalfrostwork/file_manager`
@@ -185,18 +180,7 @@
 
 **警告：电压仅允许查看，请不要尝试写入，否则可能会造成不可预料的后果！（如系统崩溃）**
 
-### ~~禁用强制挂载SDcardfs并恢复/sdcard/Adnroid下访问隔离（需Build 387及以上版本的内核）~~
-- ~~由于某些APP由于设计问题，内核默认挂载SDcardfs、取消/sdcard/Adnroid访问授权之后，可能会导致某些奇奇怪怪的问题，可以尝试关闭此功能。~~
-1. ~~打开文件管理器~~
-2. ~~找到位置`/data/crystalfrostwork`~~
-3. ~~创建空文件`sdcard_compatible`~~
-4. ~~修改之后保存，重启后生效（永久更改，重启不恢复，若要恢复启用SDcardfs，直接删除`sdcard_compatible`即可）。~~
-
-~~**警告：若刷入内核之后发生系统崩溃、无法进入系统的问题，也可在recovery创建文件`/data/crystalfrostwork/sdcard_compatible`，即可以系统默认的方式挂载sdcard**~~
-
-**由于已知的兼容性故障，此功能已废弃！**
-
-### 增强后台（需Build 412及以上版本的内核）
+### 增强后台
 - 在MIUI上，除了AOSP的LMKD低内存杀手之外，还有额外的服务（MiuiMemoryService）用于杀后台，导致后台能力下降。
 1. 打开X-plore文件管理器
 2. 找到文件`/sys/crystalfrostwork/enhanced_background/enabled`
@@ -205,15 +189,58 @@
  - 1：启用增强后台功能，屏蔽`MiuiMemoryService`服务发出的终止进程信号。（内核默认）
 4. 修改之后保存及时生效，重启恢复默认。
 
-**注：开启后ZRAM显示异常为正常现象**
+### 虚假的SELinux严格模式
+1. 打开X-plore文件管理器
+2. 找到文件`/sys/crystalfrostwork/fake_selinux/enabled`
+3. 修改文件的值，其中：
+ - 0：禁用该功能。
+ - 1：启用该功能。（内核默认）
+4. 修改之后保存及时生效，重启恢复默认。
+
+### ZRAM自动回写
+1. 打开X-plore文件管理器。
+2. 找到位置`/sys/crystalfrostwork/zram_wbd`
+- debug：是否启用模块调试信息输出。（默认：0）
+- enable：是否启用该内核模块。（默认：1）
+- interval：ZRAM自动回写的间隔（单位：秒，默认：60）
+- max_pages：单次回写操作最多回写的页面数量（一个页面大小为4kB，默认：4096）
+- min_idle：ZRAM中的页面至少多少秒没有被访问，才允许被回写（默认：1800）
+- min_touch：在单次回写间隔中，至少需要有多少秒的用户输入操作才会启动回写（默认：2）
+- min_use：ZRAM至少达到多少百分之多少的使用率时，才会允许执行回写操作（默认：25）
 
 ## 下载链接
 | 版本号 | 文件名 | 文件大小 | 校验和（MD5） | 链接 |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
+| 509 | CrystalFrostwork-Build-509-For-SM8250-Releases.zip | 22,088,408 字节 | BAFB791EAA2BFBDD771219459A3000C7 | [下载](https://gitea.com/Mandi-Sa/CrystalFrostwork-Archive/raw/branch/kernels/CrystalFrostwork-Build-509-For-SM8250-Releases.zip "下载") |
 | 369 | CrystalFrostwork-Build-369-For-SM8250-Releases.zip | 22,793,455 字节 | DC794317F6A4FB4D5C2D844F24F4058D | [下载](https://gitea.com/Mandi-Sa/CrystalFrostwork-Archive/raw/branch/kernels/CrystalFrostwork-Build-369-For-SM8250-Releases.zip "下载") |
 | 245 | CrystalFrostwork-Build-245-For-SM8250.zip | 22,760,675 字节 | 4EA0CC3222AAD9BC0302FFF2CA2AE258 | [下载](https://gitea.com/Mandi-Sa/CrystalFrostwork-Archive/raw/branch/kernels/CrystalFrostwork-Build-245-For-SM8250.zip "下载") |
 
 ## 更新日志
+### Build 509
+1. Linux 分支更新至4.19.269
+2. 内核基线更新至LA.UM.9.12.r1-15100-SMxx50.QSSI12.0
+3. 同步上游F2FS的优化更改以及补丁
+4. 支持MIUI14 Android 13
+5. 移植上游MGLRU v15并启用，降低内存开销，提升回收效率。
+6. 修复刚开机时WLAN无法打开，且概率自动关闭的问题。
+7. 修复锁屏状态下亮度过低的问题。
+8. 移除多线程kswapd（存在问题且与MGLRU冲突）
+9. ZRAM默认大小更改至10G
+10. ZRAM默认压缩算法更改至ZSTD
+11. 同步上游最新ZSTD源码
+12. 内存管理默认参数优化
+13. 支持增强后台，防止MIUI杀后台
+14. 支持控制SDP、CDP、DCP协议充电电流
+15. 移除MPTCP（MultiPathTCP）支持（存在问题）
+16. 优化CPU容量分配-容量需求曲线
+17. 完善对于小米私有快充协议的破解（UI能显示电量小数了）
+18. 修复小米10空载电流过高、耗电的问题
+19. 移植上游LRNG（Linux 随机数生成器）v45，优化随机数生成速度
+20. 移植上游对ARM64汇编函数的优化，提高内核效率
+21. 移植来自华为的LZ4解压汇编代码，提高LZ4解压速度
+22. 允许禁用虚假的SELinux严格模式
+23. 其他一些可能影响使用的小问题修复
+
 ### Build 369
 1. Linux 分支更新至4.19.237
 2. 内核基线更新至LA.UM.9.12.r1-14000-SMxx50.0
@@ -229,7 +256,7 @@
 12. 修复可能出现的系统界面随机卡死的BUG
 13. 修复WLAN驱动中存在的一些问题
 14. 支持红米系列手动电池解容（小米系列电池容量由主板电量计控制，无锁容，多次充放电即可达到自动解容目的）
-15. 加入基于DAEMON的内存回收功能
+15. 加入基于DAMON的内存回收功能
 16. 加入MPTCP（MultiPathTCP）支持
 17. 加入ZRAM DEDUP（重复数据删除）功能，降低内存使用
 18. 优化ZRAM重复数据删除HASH列表计算速度，降低HASH重复率
